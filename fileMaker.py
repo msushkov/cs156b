@@ -1,10 +1,10 @@
-read_file = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\mu\\all.dta', 'r')
-index_file = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\mu\\all.idx', 'r')
-file1 = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\data1.txt', 'w')
-file2 = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\data2.txt', 'w')
-file3 = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\data3.txt', 'w')
-file4 = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\data4.txt', 'w')
-file5 = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\data5.txt', 'w')
+read_file = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\um\\all.dta', 'r')
+index_file = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\um\\all.idx', 'r')
+file1 = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\um\data1.txt', 'w')
+file2 = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\um\data2.txt', 'w')
+file3 = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\um\data3.txt', 'w')
+file4 = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\um\data4.txt', 'w')
+file5 = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\um\data5.txt', 'w')
 
 indices = index_file.readlines()
 
