@@ -33,6 +33,8 @@ movie_ratings[previous_movie] = average_rating
 
 read_movie_file.close()
 
+
+# now for the user
 previous_user = '1'
 index = 0
 rating = 0.0
