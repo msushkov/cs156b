@@ -1,4 +1,3 @@
-# to easily switch
 sushkov = True
 
 if sushkov:

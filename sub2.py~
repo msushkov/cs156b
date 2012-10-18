@@ -81,7 +81,7 @@ for line in qual:
     vals = line.split()
     current_user_rating = user_ratings[vals[0]]
     current_movie_rating = movie_ratings[vals[1]]
-    predicted_score = (float(current_user_rating) + float(current_movie_rating)) / 2.0
+    predicted_score = (float(current_user_rating) + float(current_movie_rating)) / 2.
     write_file.write(str(predicted_score) + '\n')
 
 write_file.close()
