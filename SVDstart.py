@@ -14,8 +14,8 @@ else:
 
 # constants
 NUM_FEATURES = 40
-NUM_USERS = 17000 # NEED EXACT VALUE
-NUM_MOVIES = 500000 # NEED EXACT VALUE
+NUM_USERS = 17000 # TODO: NEED EXACT VALUE
+NUM_MOVIES = 500000 # TODO: NEED EXACT VALUE
 LEARNING_RATE = 0.001
 
 # initialize feature matrices (2D arrays); initialize to 0.1
@@ -43,8 +43,10 @@ for line in qual:
     user = vals[0]
     movie = vals[1]
     
+    # calculate the rating
+    predicted_score = calculateScore(user, movie)
     
-    predicted_score = (float(current_user_rating) + float(current_movie_rating)) / 2.0
+    # output the data to the submission file
     write_file.write(str(predicted_score) + '\n')
 
 write_file.close()
@@ -54,4 +56,8 @@ qual.close()
 def trainSVD(user, movie, rating):
     # TODO
     
-    
+
+# calculates the final score. this can only be done once we have
+# trained on the data to get the feature vectors
+def calculateScore(user, movie):
+    # TODO
