@@ -26,7 +26,7 @@ def trainSVD(user, movie, rating):
     
     # learn while our error is decreasing by an amount higher than epsilon
     # or until we hit 200 iterations
-    while abs(LEARNING_RATE * (rating - predictRating(movie, user)) - error) > EPSILON and numIterations < 2:
+    while abs(LEARNING_RATE * (rating - predictRating(movie, user)) - error) > EPSILON and numIterations < 7:
         # calculate the new error
         error = LEARNING_RATE * (rating - predictRating(movie, user))
     

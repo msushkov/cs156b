@@ -1,20 +1,34 @@
+#include <iostream>
+#include <string>
+#include <fstream>
 
-sushkov = True
+using namespace std;
 
-if sushkov:
-    read_movie_file = open('/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data1.txt', 'r')
-    read_user_file = open('/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/um/data1.txt', 'r')
-    qual = open('/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/qual.dta', 'r')
-    write_file = open('/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/SVDstart.txt', 'w')
-else:
-    read_movie_file = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\mu\data2.txt', 'r')
-    read_user_file = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\um\data2.txt', 'r')
-    qual = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\mu\qual.dta', 'r')
-    write_file = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\sub2\average_of_averages.txt', 'w')
+// Filenames
+const string dataFilePath = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data1.txt";
+const string qualFilePath = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/qual.dta";
+const string outputFilePath = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/SVDstart.txt";
 
-##############################################
-# HELPER METHODS
-##############################################
+int main() {
+    getData();
+    
+    return 0;
+}
+
+void getData() {
+    string line;
+    ifstream dataFile(dataFilePath);
+    
+    if (dataFile.is_open()) {
+        while (dataFile.good()) {
+            getLine(dataFile, line);
+            
+            cout << line << endl;
+        }
+        
+        dataFile.close();
+    }
+}
 
 # trains our algorithm given an input data point
 def trainSVD(user, movie, rating):
