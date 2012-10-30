@@ -7,8 +7,6 @@ brogrammers
 10/17/12: Implementing average of averages
 10/17/12: Ran average of averages and submitted to scoreboard. Currently at -6% compared to water level.
 10/25/12: Implemented basic version of SVD. Will take a month to run in python so will try to code in c++ and need to think of optimizations.
-10/27/12 - 10/29/12: Have been working on basic C++ implementation of SVD. Had a lot of bugs and seg faults but finally fixed that on 10/29/12. 
-    Currently getting 300% below water so need to fix algorithm, but at least there are no seg faults...
 
 TODO: 
 - Boltzmann machines

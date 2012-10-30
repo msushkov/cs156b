@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
+#include <cassert>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,19 +11,25 @@
 
 using namespace std;
 
+int MAC = 0;
+
 // Filenames
-const char dataFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data2.txt";
+const char dataFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data1.txt";
 const char qualFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/qual.dta";
 const char outputFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/SVDstart.txt";
 
+const char dataFilePathMac[] = "/users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data2.txt";
+const char qualFilePathMac[] = "/users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/qual.dta";
+const char outputFilePathMac[] = "/users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/SVDstart.txt";
+
 // constants
-const int NUM_FEATURES = 6;
+const int NUM_FEATURES = 20;
 const int NUM_USERS = 458293;
 const int NUM_MOVIES = 17770;
 const double LEARNING_RATE = 0.001;
-const int K = 25;
+const int K = 5;
 const int EPSILON = 10^-5;
-const int MAX_ITERATIONS = 20;
+const int MAX_ITERATIONS = 30;
 
 // feature matrices (2D arrays)
 // feature k for user u is userFeatures[u][k]
@@ -65,19 +72,26 @@ vector<string> split(const string &s, char delim) {
 
 // calculates the dot product of the feature vectors for a given user and movie
 double predictRating(int movie, int user) {
+	assert(user < NUM_USERS);
+	assert(user >= 0);
+	assert(movie >= 0);
+	assert(movie < NUM_MOVIES);
+
     double result = 0.0;
-
-    for (int i = 0; i < NUM_FEATURES; i++) {
-        cout << userFeatures[user][i] << " :: " << movieFeatures[movie][i] << endl;
-        double prod = (userFeatures[user][i]) * (movieFeatures[movie][i]);
-        result += prod;
-    }
-
+    for (int i = 0; i < NUM_FEATURES; i++)
+        result += (userFeatures[user][i]) * (movieFeatures[movie][i]);
     return result;
 }
 
 // trains our algorithm given an input data point
 void trainSVD(int user, int movie, int rating) {
+	assert(user <= NUM_USERS);
+	assert(user > 0);
+	assert(movie > 0);
+	assert(rating > 0);
+	assert(rating <= 5);
+	assert(movie <= NUM_MOVIES);
+
     int numIterations = 0;
 
     // large so we go into the first iteration of the while loop
@@ -88,8 +102,6 @@ void trainSVD(int user, int movie, int rating) {
     //while (abs(LEARNING_RATE * (rating - predictRating(movie - 1, user - 1)) - error) > EPSILON && numIterations < MAX_ITERATIONS) {
     while (numIterations < MAX_ITERATIONS) {
         // calculate the new error
-        //cout << predictRating(movie - 1, user - 1) << endl;
-
         error = rating - predictRating(movie - 1, user - 1);
         //cout << "ERROR: " << error << endl;
         //cout << user << "::" << movie << endl;
@@ -97,30 +109,32 @@ void trainSVD(int user, int movie, int rating) {
         // iterate over features 0 through 39
         for (int k = 0; k < NUM_FEATURES; k++) {            
             double oldUserFeature = userFeatures[user - 1][k];
-            //userFeatures[user - 1][k] += LEARNING_RATE * (error * movieFeatures[movie - 1][k] - K * oldUserFeature);
-            //movieFeatures[movie - 1][k] += LEARNING_RATE * (error * oldUserFeature - K * movieFeatures[movie - 1][k]);
+            userFeatures[user - 1][k] += LEARNING_RATE * (error * movieFeatures[movie - 1][k] - K * oldUserFeature);
+            movieFeatures[movie - 1][k] += LEARNING_RATE * (error * oldUserFeature - K * movieFeatures[movie - 1][k]);
 
-            userFeatures[user - 1][k] += LEARNING_RATE * error * movieFeatures[movie - 1][k];
-            movieFeatures[movie - 1][k] += LEARNING_RATE * error * oldUserFeature;
-
-            cout << userFeatures[user - 1][k] << endl;
-            cout << movieFeatures[movie - 1][k] << endl;
+            //userFeatures[user - 1][k] += LEARNING_RATE * error * movieFeatures[movie - 1][k];
+            //movieFeatures[movie - 1][k] += LEARNING_RATE * error * oldUserFeature;
         }
             
         numIterations++;
     }
 }
 
-// reads data in and loads it into memory
+// reads data in
 void getData() {
     string line;
-    ifstream dataFile(dataFilePath, ios::in);
+    ifstream dataFile;
+    
+    if (MAC)
+    	dataFile.open(dataFilePathMac, ios::in);
+    else
+    	dataFile.open(dataFilePath, ios::in);
     
     int numLinesSoFar = 0;
     
     // go through the input data line by line
     if (dataFile.is_open()) {
-        while (dataFile.good() && numLinesSoFar < 10) {
+        while (dataFile.good()) {
             if (getline(dataFile, line)) {                
                 vector<string> vals = split(line, ' ');
 
@@ -140,11 +154,19 @@ void getData() {
 // writes data out
 void outputResults() {
     // output file
-    ofstream outputFile(outputFilePath, ios::out);
+    ofstream outputFile;
+    if (MAC)
+    	outputFile.open(outputFilePathMac, ios::out);
+    else
+    	outputFile.open(outputFilePath, ios::out);
     
     // qual file
     string line;
-    ifstream qualFile(qualFilePath, ios::in);
+    ifstream qualFile;
+    if (MAC)
+    	qualFile.open(qualFilePathMac, ios::in);
+    else
+    	qualFile.open(qualFilePath, ios::in);
     
     // go through each line of the qual file
     if (qualFile.is_open()) {
@@ -152,16 +174,8 @@ void outputResults() {
             if (getline(qualFile, line)) {
                 vector<string> vals = split(line, ' ');
 
-                //cout << atoi(vals[0].c_str()) - 1 << " :: " << atoi(vals[1].c_str()) - 1<< endl;
-
-                int user = atoi(vals[0].c_str()) - 1;
-                cout << user << endl;
-                /*for (int j = 0; j < NUM_FEATURES; j++) {
-                    cout << userFeatures[1][j] << ", ";
-                }*/
-
                 // calculate the rating for user, movie
-                double predictedScore = predictRating(atoi(vals[0].c_str()) - 1, atoi(vals[1].c_str()) - 1);
+                double predictedScore = predictRating(atoi(vals[1].c_str()) - 1, atoi(vals[0].c_str()) - 1);
 
                 // write to file
                 if (outputFile.is_open()) {
