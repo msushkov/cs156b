@@ -8,17 +8,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cmath>
+#include <ctime>
 
 using namespace std;
 
-// is sushkov using 
+// is sushkov using his mac or not?
 const int MAC = 0;
 
 // Filenames
 const char dataFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data1.txt";
+const char dataFilePathUM[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/um/data1.txt";
 const char outOfSampleFile[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data2.txt";
 const char qualFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/qual.dta";
-const char outputFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/SVDstart2.txt";
+const char outputFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/SVD_30f_150e_K=0.02.txt";
 
 const char dataFilePathMac[] = "/users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data2.txt";
 const char qualFilePathMac[] = "/users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/qual.dta";
@@ -27,18 +29,20 @@ const char outputFilePathMac[] = "/users/msushkov/Dropbox/Caltech/Caltech Classe
 // constants
 const int NUM_USERS = 458293;
 const int NUM_MOVIES = 17770;
+const double LEARNING_RATE = 0.001;
+const int MAX_ITERATIONS = 1;
 
 // to be adjusted
-const int NUM_FEATURES[] = {20, 40, 60}; // length is 3
-const int LENGTH_NUM_FEATURES = 3;
+const int NUM_FEATURES[] = {30}; // length is 1
+const int LENGTH_NUM_FEATURES = 1;
 
-const double LEARNING_RATE = 0.001;
+const double K[] = {0.02}; // length is 1
+const int LENGTH_K = 1;
 
-const int K[] = {0.001, 0.01, 0.5}; // length is 3
-const int LENGTH_K = 3;
+const int NUM_EPOCHS = 150;
+const double VARIANCE_RATIO = 25;
 
-const int MAX_ITERATIONS = 1;
-const int NUM_EPOCHS = 25;
+double GLOBAL_AVG_MOVIE_RATING = 0;
 
 // defines a single training data point
 class DataPoint {
@@ -60,6 +64,18 @@ public:
     }
 };
 
+// helps us to get a "better mean" for a given user or movie rating
+class SumAndNumberRatings {
+public:
+    double sumRatings;
+    double numRatings;
+
+    SumAndNumberRatings(double sumRatings, double numRatings) {
+        this->sumRatings = sumRatings;
+        this->numRatings = numRatings;
+    }
+};
+
 // a vector of datapoints to hold data
 vector<DataPoint*> *trainingData = new vector<DataPoint*>;
 
@@ -67,6 +83,20 @@ vector<DataPoint*> *trainingData = new vector<DataPoint*>;
 // feature k for user u is userFeatures[u][k]
 double **userFeatures = new double*[NUM_USERS];
 double **movieFeatures = new double*[NUM_MOVIES];
+
+// arrays to hold the average ratings for each movie and for each user
+double *avgUserRatings = new double[NUM_USERS];
+double *avgMovieRatings = new double[NUM_MOVIES];
+
+// the average offset for a given user
+double *avgOffset = new double[NUM_USERS];
+
+// hold the sum and count of ratings for each user or movie
+SumAndNumberRatings **movieSumsAndCounts = new SumAndNumberRatings*[NUM_MOVIES];
+SumAndNumberRatings **userSumsAndCounts = new SumAndNumberRatings*[NUM_USERS];
+
+// the regularized movie averages
+double *betterMovieMeans = new double[NUM_MOVIES];
 
 // initialize each element of the feature matrices to 0.1
 void initialize(int numFeatures) {
@@ -112,7 +142,25 @@ double predictRating(int movie, int user, int numFeatures) {
     double result = 0.0;
     for (int i = 0; i < numFeatures; i++)
         result += (userFeatures[user][i]) * (movieFeatures[movie][i]);
-    return result;
+
+    return result + betterMovieMeans[movie] + avgOffset[user];
+}
+
+void computeBetterMovieMeans() {
+    for (int i = 0; i < NUM_MOVIES; i++) {
+        SumAndNumberRatings *s = movieSumsAndCounts[i];
+
+        double sumForCurrMovie = 0;
+        double numRatingsForCurrMovie = 0;
+
+        if (s != NULL) {
+            sumForCurrMovie = s->sumRatings;
+            numRatingsForCurrMovie = s->numRatings;
+        }
+        
+        betterMovieMeans[i] = (VARIANCE_RATIO * GLOBAL_AVG_MOVIE_RATING + sumForCurrMovie) / 
+            (VARIANCE_RATIO + numRatingsForCurrMovie);
+    }
 }
 
 // trains our algorithm given an input data point
@@ -218,17 +266,20 @@ void learn() {
             // go N times through the data
             for (int i = 0; i < NUM_EPOCHS; i++) {
                 cout << "Current epoch" << "(feature " << f + 1 << " out of " << LENGTH_NUM_FEATURES << 
-                    ", K-value is " << h + 1 << " out of " << LENGTH_K << ") : " << i + 1 << " out of " << 
-                    NUM_EPOCHS << endl;
+                    ", K-value is " << h + 1 << " out of " << LENGTH_K << ") : " << i + 1 << " out of " << NUM_EPOCHS << endl;
+
+                const clock_t begin_time = clock();
 
                 // go through each point in the data set
                 for (int p = 0; p < trainingData->size(); p++) {
 
                     // train the SVD on each point (will go through all features)
-                    trainSVD(trainingData->at(p)->user, trainingData->at(p)->movie,
+                    trainSVD(trainingData->at(p)->user, trainingData->at(p)->movie, 
                         trainingData->at(p)->rating, K[h], NUM_FEATURES[f]);
 
                 } // end training data loop
+
+                cout << " --> " << float(clock() - begin_time) / CLOCKS_PER_SEC << " seconds" << endl;
 
             } // end epoch loop
 
@@ -265,7 +316,91 @@ void learn() {
     cout << endl;
 }
 
-// reads data in
+// computes the average ratings for each user (uses UM data set)
+// also computes the user offset
+void getAvgUserRatings() {
+    string line;
+
+    // get the UM data file
+    ifstream dataFile(dataFilePathUM, ios::in);
+    
+    int numLinesSoFar = 0;
+
+    int prevUser = 1;
+    double totalRating = 0;
+    int index = 0; // counts the # of movies each user rated
+
+    double currTotalOffset = 0;
+
+    // go through the input data line by line
+    while (getline(dataFile, line)) {
+        // where are we in the current line?
+        int count = 0;
+
+        int currUser = -1;
+        int currMovie = -1;
+        int currRating = -1;
+
+        istringstream lineIn(line);
+        while (lineIn) {
+            int val = 0;
+            if (lineIn >> val) {
+                if (count == 0)
+                    currUser = val;
+                else if (count == 1)
+                    currMovie = val;
+                else if (count == 3)
+                    currRating = val;
+                count++;
+            }
+        }
+
+        // to calculate the average ratings for the movies
+
+        // if the user changes
+        if (prevUser != currUser) {
+            userSumsAndCounts[prevUser - 1] = new SumAndNumberRatings(totalRating, index);
+
+            avgUserRatings[prevUser - 1] = totalRating / index;
+            totalRating = currRating;
+
+            avgOffset[prevUser - 1] = currTotalOffset / index;
+            currTotalOffset = currRating - avgMovieRatings[currMovie - 1];
+
+            index = 1;
+        } else { // if we keep seeing data for the same user
+            if (currRating != 0) {
+                index++;
+                totalRating += currRating;
+                currTotalOffset += (currRating - avgMovieRatings[currMovie - 1]);
+            }
+        }
+
+        prevUser = currUser;
+            
+        numLinesSoFar++;
+        if (numLinesSoFar % 1000000 == 0)
+            cout << "Computing avg user ratings: " << numLinesSoFar / 1000000 << " million" << endl;
+    }    
+
+    // deals with last line with respect to calculating the average user rating
+    avgUserRatings[prevUser - 1] = totalRating / index;
+    userSumsAndCounts[prevUser - 1] = new SumAndNumberRatings(totalRating, index);
+    avgOffset[prevUser - 1] = currTotalOffset / index;
+
+    dataFile.close();
+}
+
+// sets the global average of the average ratings for each movie
+void getGlobalMovieAvg() {
+    double sum = 0;
+    for (int i = 0; i < NUM_MOVIES; i++)
+        sum += avgMovieRatings[i];
+
+    GLOBAL_AVG_MOVIE_RATING = sum / NUM_MOVIES;
+}
+
+// reads data in (MU) and also cimputes avg ratings for each movie
 void getData() {
     string line;
     ifstream dataFile;
@@ -276,6 +411,10 @@ void getData() {
     	dataFile.open(dataFilePath, ios::in);
     
     int numLinesSoFar = 0;
+
+    int prevMovie = 1;
+    double totalRating = 0;
+    int index = 0; // counts the # of users that watched each movie
 
     // go through the input data line by line
     while (getline(dataFile, line)) {
@@ -298,15 +437,44 @@ void getData() {
         }
         // add the point to our data vector
         trainingData->push_back(currPoint);
+
+        // to calculate the average ratings for the movies
+        if (prevMovie != currPoint->movie) {
+            movieSumsAndCounts[prevMovie - 1] = new SumAndNumberRatings(totalRating, index);
+
+            avgMovieRatings[prevMovie - 1] = totalRating / index;
+            index = 1;
+            totalRating = currPoint->rating;
+        } else {
+            if (currPoint->rating != 0)
+                index++;
+            totalRating += currPoint->rating;
+        }
+
+        prevMovie = currPoint->movie;
             
         numLinesSoFar++;
         if (numLinesSoFar % 1000000 == 0)
             cout << numLinesSoFar / 1000000 << " million" << endl;
     }    
+
+    // deals with last line with respect to calculating the average movie rating
+    avgMovieRatings[prevMovie - 1] = totalRating / index;
+    movieSumsAndCounts[prevMovie - 1] = new SumAndNumberRatings(totalRating, index);
+
     dataFile.close();
+
+    // at this point we have the avg movie ratings filled out
+    // now calculate the avg user ratings
+    getAvgUserRatings();
+
+    // compute the global movie average
+    getGlobalMovieAvg();
+
+    // populate the better means array
+    computeBetterMovieMeans();
 }
 
-/*
 // writes data out
 void outputResults() {
     // output file
@@ -346,7 +514,7 @@ void outputResults() {
         }
 
         // calculate the rating for user, movie
-        double predictedScore = predictRating(movie - 1, user - 1);
+        double predictedScore = predictRating(movie - 1, user - 1, NUM_FEATURES[0]);
 
         // write to file
         outputFile << predictedScore << endl;
@@ -354,7 +522,7 @@ void outputResults() {
 
     qualFile.close();
     outputFile.close();
-}*/
+}
 
 void cleanup() {
     for (int i = 0; i < NUM_USERS; i++)
@@ -369,6 +537,22 @@ void cleanup() {
     for (int i = 0; i < trainingData->size(); i++)
         delete trainingData->at(i);
     delete trainingData;
+
+    delete[] avgMovieRatings;
+    delete[] avgUserRatings;
+
+    for (int i = 0; i < NUM_USERS; i++) 
+        delete userSumsAndCounts[i];
+
+    for (int i = 0; i < NUM_MOVIES; i++) 
+        delete movieSumsAndCounts[i];
+
+    delete[] movieSumsAndCounts;
+    delete[] userSumsAndCounts;
+
+    delete[] avgOffset;
+
+    delete betterMovieMeans;
 }
 
 int main() {
@@ -379,7 +563,7 @@ int main() {
     learn();
     cout << "Done learning" << endl;
 
-    //outputResults();
+    outputResults();
     cout << "Done with outputResults()" << endl;
 
     cleanup();

@@ -218,15 +218,13 @@ void learn() {
             // go N times through the data
             for (int i = 0; i < NUM_EPOCHS; i++) {
                 cout << "Current epoch" << "(feature " << f + 1 << " out of " << LENGTH_NUM_FEATURES << 
-                    ", K-value is " << h + 1 << " out of " << LENGTH_K << ") : " << i + 1 << " out of " << 
-                    NUM_EPOCHS << endl;
+                    ", K-value is " << h + 1 << " out of " << LENGTH_K << ") : " << i + 1 << " out of " << NUM_EPOCHS << endl;
 
                 // go through each point in the data set
                 for (int p = 0; p < trainingData->size(); p++) {
 
                     // train the SVD on each point (will go through all features)
-                    trainSVD(trainingData->at(p)->user, trainingData->at(p)->movie,
-                        trainingData->at(p)->rating, K[h], NUM_FEATURES[f]);
+                    trainSVD(trainingData->at(p)->user, trainingData->at(p)->movie, trainingData->at(p)->rating, K[h], NUM_FEATURES[f]);
 
                 } // end training data loop
 
