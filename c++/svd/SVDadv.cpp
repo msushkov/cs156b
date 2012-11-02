@@ -20,7 +20,7 @@ const char dataFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/C
 const char dataFilePathUM[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/um/data1.txt";
 const char outOfSampleFile[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data2.txt";
 const char qualFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/qual.dta";
-const char outputFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/SVD_30f_150e_K=0.02.txt";
+const char outputFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/SVD_25f_40e_K=0.01.txt";
 
 const char dataFilePathMac[] = "/users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data2.txt";
 const char qualFilePathMac[] = "/users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/qual.dta";
@@ -31,16 +31,17 @@ const int NUM_USERS = 458293;
 const int NUM_MOVIES = 17770;
 const double LEARNING_RATE = 0.001;
 const int MAX_ITERATIONS = 1;
+const int EPSILON = 10^(-4);
 
-// to be adjusted
-const int NUM_FEATURES[] = {30}; // length is 1
+// to be adjusted (and set by command line args)
 const int LENGTH_NUM_FEATURES = 1;
+int NUM_FEATURES[LENGTH_NUM_FEATURES];
 
-const double K[] = {0.02}; // length is 1
 const int LENGTH_K = 1;
+double K[LENGTH_K];
 
-const int NUM_EPOCHS = 150;
-const double VARIANCE_RATIO = 25;
+int NUM_EPOCHS;
+double VARIANCE_RATIO;
 
 double GLOBAL_AVG_MOVIE_RATING = 0;
 
@@ -163,6 +164,75 @@ void computeBetterMovieMeans() {
     }
 }
 
+// computes the ratio of the variances (the regularization constant for betterMean)
+void computeVarianceRatios() {
+    // variance of all the avg movie ratings
+    double Va = 0;
+
+    double totalDiff = 0;
+    // find the variance
+    for (int i = 0; i < NUM_MOVIES; i++)
+        totalDiff += (avgMovieRatings[i] - GLOBAL_AVG_MOVIE_RATING) *
+            (avgMovieRatings[i] - GLOBAL_AVG_MOVIE_RATING);
+    Va = totalDiff / NUM_MOVIES;
+
+    // go through the MU file and get the avg variance of indiv movie ratings
+    string line;
+    ifstream dataFile(dataFilePath, ios::in);
+
+    int prevMovie = 1;
+    double currSquaredSum = 0;
+    double totalVariance = 0;
+    int index = 0;
+
+    int totalCount = 1;
+
+    // go through each line
+    while (getline(dataFile, line)) {
+        // where are we in the current line?
+        int count = 0;
+
+        int rating = 0;
+        int movie = 0;
+
+        istringstream lineIn(line);
+        while (lineIn) {
+            int val = 0;
+            if (lineIn >> val) {
+                if (count == 1)
+                    movie = val;
+                else if (count == 3)
+                    rating = val;
+                count++;
+            }
+        }
+
+        if (prevMovie != movie) {
+            totalCount++;
+            totalVariance += currSquaredSum / index;
+            index = 1;
+            currSquaredSum = (rating - avgMovieRatings[movie - 1]) * (rating - avgMovieRatings[movie - 1]);
+        } else {
+            if (rating != 0) {
+                index++;
+                currSquaredSum += (rating - avgMovieRatings[movie - 1]) * (rating - avgMovieRatings[movie - 1]);
+            }
+        }
+
+        prevMovie = movie;
+
+    }
+
+    dataFile.close();
+
+    // account for the end of file
+    totalVariance += currSquaredSum / index;
+
+    double Vb = totalVariance / totalCount;
+
+    VARIANCE_RATIO = Vb / Va;
+}
+
 // trains our algorithm given an input data point
 void trainSVD(int user, int movie, int rating, int Kindex, int numFeatures) {
 	assert(user <= NUM_USERS);
@@ -255,6 +325,9 @@ void learn() {
     stringstream sstm1;
     vector<string> results;
 
+    double Eout = 10^4;
+    double prevEout = 10^9;
+
     // calculate in-sample and out-of-sample errors for the different numbers of features
     
     for (int f = 0; f < LENGTH_NUM_FEATURES; f++) { // iterate over different # of features
@@ -263,8 +336,11 @@ void learn() {
 
             initialize(NUM_FEATURES[f]);
 
+            int i = 0;
+
             // go N times through the data
             for (int i = 0; i < NUM_EPOCHS; i++) {
+            //while (i < NUM_EPOCHS && (prevEout - Eout) > EPSILON) {
                 cout << "Current epoch" << "(feature " << f + 1 << " out of " << LENGTH_NUM_FEATURES << 
                     ", K-value is " << h + 1 << " out of " << LENGTH_K << ") : " << i + 1 << " out of " << NUM_EPOCHS << endl;
 
@@ -279,7 +355,12 @@ void learn() {
 
                 } // end training data loop
 
+                //prevEout = Eout;
+                //Eout = computeOutOfSample(NUM_FEATURES[f]);
+
                 cout << " --> " << float(clock() - begin_time) / CLOCKS_PER_SEC << " seconds" << endl;
+
+                //i++;
 
             } // end epoch loop
 
@@ -394,10 +475,15 @@ void getAvgUserRatings() {
 // sets the global average of the average ratings for each movie
 void getGlobalMovieAvg() {
     double sum = 0;
-    for (int i = 0; i < NUM_MOVIES; i++)
+    int count = 0; // counts the movies that were rated in this dataset
+    for (int i = 0; i < NUM_MOVIES; i++) {
         sum += avgMovieRatings[i];
 
-    GLOBAL_AVG_MOVIE_RATING = sum / NUM_MOVIES;
+        if (avgMovieRatings[i] > 0)
+            count++;
+    }
+
+    GLOBAL_AVG_MOVIE_RATING = sum / count;
 }
 
 // reads data in (MU) and also cimputes avg ratings for each movie
@@ -473,6 +559,8 @@ void getData() {
 
     // populate the better means array
     computeBetterMovieMeans();
+
+    computeVarianceRatios();
 }
 
 // writes data out
@@ -555,7 +643,19 @@ void cleanup() {
     delete betterMovieMeans;
 }
 
-int main() {
+// K-value, # features, # epochs
+int main(int argc, char *argv[]) {
+    // process the command line args
+    if (argc != 4) {
+        cout << "Usage: ./SVDadv [K-value] [# features] [# epochs]" << endl;
+        return 1;
+    }
+
+    // process the command-line args
+    K[0] = atof(argv[1]);
+    NUM_FEATURES[0] = atoi(argv[2]);
+    NUM_EPOCHS = atoi(argv[3]);
+
     getData();
     cout << "Done with getData()" << endl;
     
