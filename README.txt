@@ -19,12 +19,16 @@ brogrammers
 	100 epochs:  Ein = 0.8438, Eout = 0.86
 	120 epochs: Ein = 0.8343, Eout = 0.853
 
+11/11/12: Started to implement Koren's SVD++, but algorithm with y takes too long to converge so for now trying to get the version with the simple baselines working. Also trying to add caching in the dot product calculation.
+
 TODO: 
-- refactor code and make a library for loading data
 - write aggregation code (python)
-- add a baseline predicted rating into the SVD (use averages)
+- finish SVD++ and get at least 4% above water
+- implement k-means
+- implement PCA(?)
 
 algorithms:
+- SVD++
 - Boltzmann machines
 - k nearest neighbors
 - SimRank
