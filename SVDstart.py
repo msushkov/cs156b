@@ -1,5 +1,5 @@
 
-sushkov = True
+sushkov = False
 
 if sushkov:
     read_movie_file = open('/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data1.txt', 'r')
@@ -10,7 +10,7 @@ else:
     read_movie_file = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\mu\data2.txt', 'r')
     read_user_file = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\um\data2.txt', 'r')
     qual = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\mu\qual.dta', 'r')
-    write_file = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\sub2\average_of_averages.txt', 'w')
+    write_file = open('C:\Users\Mike\Documents\Mike\Caltech\\aJunior Fall\CS 156b\k_means.txt', 'w')
 
 ##############################################
 # HELPER METHODS
@@ -107,5 +107,3 @@ write_file.close()
 qual.close()    
 
 print 'DONE!'
-    
-        
