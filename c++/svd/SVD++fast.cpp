@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <cmath>
 #include <ctime>
+#include <algorithm>
 
 using namespace std;
 
@@ -16,11 +17,11 @@ using namespace std;
 const int MAC = 0;
 
 // Filenames
-const char dataFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data1.txt";
-const char dataFilePathUM[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/um/data1.txt";
+const char dataFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data123.txt";
+const char dataFilePathUM[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/um/data123.txt";
 const char outOfSampleFile[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data4.txt";
 const char qualFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/qual.dta";
-const char outputFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/SVD/SVD_40f_150e_K=0.02.txt";
+const char outputFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/SVD/SVDfast_40f_40e_K=0.02.txt";
 
 const char dataFilePathMac[] = "/users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data2.txt";
 const char qualFilePathMac[] = "/users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/qual.dta";
@@ -30,11 +31,11 @@ const char outputFilePathMac[] = "/users/msushkov/Dropbox/Caltech/Caltech Classe
 const double GLOBAL_AVG_MOVIE_RATING = 3.60951619727;
 const int NUM_USERS = 458293;
 const int NUM_MOVIES = 17770;
-double LEARNING_RATE = 0.001;
+double LEARNING_RATE = 0.01;
 const double EPSILON = 0.0001;
 const int LENGTH_NUM_FEATURES = 1;
 const int LENGTH_K = 1;
-const double LEARNING_RATE_DECREASE_RATE = 1;
+const double LEARNING_RATE_DECREASE_RATE = 0.9;
 const double VARIANCE_RATIO = 25;
 
 // to be adjusted (and set by command line args)
@@ -267,7 +268,6 @@ double predictRating(int movie, int user, int numFeatures) {
     //return GLOBAL_AVG_MOVIE_RATING + userBias[user] + movieBias[movie] + result;
     return avgUserOffset[user] + avgMovieOffset[movie] + result;
     //return GLOBAL_AVG_MOVIE_RATING + (betterUserMeans[user] - GLOBAL_AVG_MOVIE_RATING) + (betterMovieMeans[movie] - GLOBAL_AVG_MOVIE_RATING) + result;
-    //return result;
 }
 
 // trains our algorithm given an input data point
@@ -275,10 +275,12 @@ void trainSVD(int user, int movie, int rating, int Kindex, int numFeatures) {
     double *featureVectorForCurrentUser = userFeatures[user - 1];
     double *featureVectorForCurrentMovie = movieFeatures[movie - 1];
 
+    double error = rating - predictRating(movie - 1, user - 1, numFeatures);
+
     // iterate over features 0 through N - 1
     for (int k = 0; k < numFeatures; k++) {
         //double error = rating - predictRating_training(movie - 1, user - 1, numFeatures, k);
-        double error = rating - predictRating_training(user - 1, movie - 1, featureVectorForCurrentMovie, featureVectorForCurrentUser, numFeatures, k);
+        //double error = rating - predictRating_training(user - 1, movie - 1, featureVectorForCurrentMovie, featureVectorForCurrentUser, numFeatures, k);
         //double error = rating - predictRating(movie - 1, user - 1, numFeatures);
 
         //double oldUserFeature = featureVectorForCurrentUser[k];
@@ -288,7 +290,7 @@ void trainSVD(int user, int movie, int rating, int Kindex, int numFeatures) {
         double oldMovieFeature = movieFeatures[movie - 1][k];
 
         // update user feature vector
-        userFeatures[user - 1][k] += (LEARNING_RATE * (error * oldMovieFeature - K[Kindex] * oldUserFeature);
+        userFeatures[user - 1][k] += (LEARNING_RATE * (error * oldMovieFeature - K[Kindex] * oldUserFeature));
         //featureVectorForCurrentUser[k] += LEARNING_RATE * (error * oldMovieFeature - K[Kindex] * oldUserFeature);
 
         // update movie feature vector
@@ -411,6 +413,9 @@ void learn() {
                         trainingData->at(p)->rating, K[h], NUM_FEATURES[f]);
 
                 } // end training data loop
+
+                // randomize the training data
+                next_permutation(trainingData->begin(), trainingData->end());
 
                 // decrease the learning rate
                 LEARNING_RATE *= LEARNING_RATE_DECREASE_RATE;

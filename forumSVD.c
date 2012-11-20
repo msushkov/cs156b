@@ -30,7 +30,7 @@
           tmp_mf = m_factor[movieId][f];
             
           // *** User vector
-          c_factor[custId][f] += (LRATE_c * (err * mf - LAMDA_c * tmp_cf));
+          c_factor[custId][f] += (LRATE_c * (err * tmp_mf - LAMDA_c * tmp_cf));
 
           // *** Movie vector (NORM is the sqrt(user_support) that normalizes the sum(movie_weights))
           m_factor[movieId][f] += (LRATE_m * (err * (tmp_cf + NORM[custId] * sum_mw[custId][f]) - LAMDA_m * tmp_mf));

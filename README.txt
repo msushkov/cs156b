@@ -18,8 +18,10 @@ brogrammers
 	70 epochs: Ein = 0.857, Eout = 0.8696
 	100 epochs:  Ein = 0.8438, Eout = 0.86
 	120 epochs: Ein = 0.8343, Eout = 0.853
-
 11/11/12: Started to implement Koren's SVD++, but algorithm with y takes too long to converge so for now trying to get the version with the simple baselines working. Also trying to add caching in the dot product calculation.
+11/12/12: Fixed a bug in SVD: movie and user offsets were not calculated using the global average.
+11/15/12: 60 features, 120 epochs, K = 0.015, Lrate = 0.001: RMSEprobe = 0.930082, RMSEquiz = 0.93129.
+11/15/12: Fixed a bug in caching of dot products. Ran the algorithm with 40 features, K = 0.02, Lrate = 0.001 for 150 epochs. Eout(probe) = 0.928722, Ein = 0.80932, RMSE(quiz) = 0.92985. Got to 2.26% above water.
 
 TODO: 
 - write aggregation code (python)
