@@ -6,7 +6,7 @@ totalRating = 0.0
 
 for line in read_file:
 	vals = line.split()
-	rating = int(vals[3])
+	rating = float(vals[3])
 
 	if rating > 0:
 		numRatings += 1

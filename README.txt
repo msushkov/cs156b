@@ -22,16 +22,29 @@ brogrammers
 11/12/12: Fixed a bug in SVD: movie and user offsets were not calculated using the global average.
 11/15/12: 60 features, 120 epochs, K = 0.015, Lrate = 0.001: RMSEprobe = 0.930082, RMSEquiz = 0.93129.
 11/15/12: Fixed a bug in caching of dot products. Ran the algorithm with 40 features, K = 0.02, Lrate = 0.001 for 150 epochs. Eout(probe) = 0.928722, Ein = 0.80932, RMSE(quiz) = 0.92985. Got to 2.26% above water.
+11/19/12: Trying to implement a faster version of SVD in which the error only gets calculated once for every 10 features. Each epoch takes about 35 seconds, which is much faster than before.
+11/23/12: Trying regular batch SVD with predicted rating as just the dot product; no offset or baseline. Feature vectors are initialized to sqrt(3.6... / # feat) + small random value between -0.01 and 0.01.
+	Running with 40 features, K = 0.02, Lrate = 0.001, and 150 epochs. From iteration 135 to 138 Eout (measured on data4) went from 0.907295 to 0.907092. Training on data123.
+	Final (after 150 iterations) Eout = 0.906555 (measured on data4), Ein = 0.748658, Quiz RMSE = 0.90818 (4.54% above water). (no training data randomization)
+11/24/12: Ran SVD with 50 features, 157 iterations, K = 0.02, Lrate = 0.001. Ein (123) = 0.738339, Eout (4) = 0.905375, Quiz RMSE = 0.90706, 4.6605% above water (with data randomization).
 
-TODO: 
+Done so far:
+- Got the basic version of batch SVD to 4.66% above water
+- Implemented k-Means
+
+TODO:
+- run SVD with 200 features
 - write aggregation code (python)
-- finish SVD++ and get at least 4% above water
-- implement k-means
-- implement PCA(?)
+- aggregate the 2.26% solution with the best regular SVD, and with a solution where
+	predicted_rating = avgMovieRating[movie] + userOffset[movie] (regularized version)
+	(maybe also throw the global average into that mix)
+- finish SVD++
+- aggregate/increment k-means with SVD (use pearson for the k-means)
 
 algorithms:
+- SVD (done)
+- k means clustering (almost done)
 - SVD++
 - Boltzmann machines
 - k nearest neighbors
 - SimRank
-- k means clustering
