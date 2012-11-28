@@ -335,7 +335,6 @@ void learn() {
 
         // go through each point in the data set
         for (int p = 0; p < NUM_USERS; p++) {
-        
             if (trainingData[p] != NULL) {
             
                 for (int j = 0; j < trainingData[p]->size(); j++) {
@@ -343,7 +342,6 @@ void learn() {
                     DataPoint *currData = trainingData[p]->at(j);
                 
                     if (currData != NULL) {
-                    
                         if (num % 1000000 == 0)
                             cout << "Data point: " << num / 1000000 << " million" << endl;
                         num++;

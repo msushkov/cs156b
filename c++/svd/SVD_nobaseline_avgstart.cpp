@@ -17,51 +17,47 @@ using namespace std;
 const int MAC = 0;
 
 // Filenames
-const char dataFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data123.txt";
-const char dataFilePathUM[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/um/data123.txt";
+const char dataFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data1234.txt";
+const char dataFilePathUM[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/um/data1234.txt";
 const char outOfSampleFile[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data4.txt";
 const char qualFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/qual.dta";
-const char outputFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/SVD++/test.txt";
+const char outputFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/SVD/SVD_data1234_50f_157e_K=0.02.txt";
 
-const char outputUserFeatureFile[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/feature_matrices/userFeatures_SVD++_50f_K=0.02.txt";
-const char outputMovieFeatureFile[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/feature_matrices/movieFeatures_SVD++_50f_K=0.02.txt";
+const char outputUserFeatureFile[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/feature_matrices/userFeatures_SVD_data1234_50f_K=0.02_157e.txt";
+const char outputMovieFeatureFile[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/feature_matrices/movieFeatures_SVD_data1234_50f_K=0.02_157e.txt";
 
 const char dataFilePathMAC[] = "/Users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data123.txt";
 const char dataFilePathUMMAC[] = "/Users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/um/data123.txt";
 const char outOfSampleFileMAC[] = "/Users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data4.txt";
 const char qualFilePathMAC[] = "/Users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/qual.dta";
-const char outputFilePathMAC[] = "/Users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/SVD/SVDreg_40f_min150e_K=0.02.txt";
+const char outputFilePathMAC[] = "/Users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/SVD/SVD_40f_min150e_K=0.02.txt";
 
 const char outputUserFeatureFileMAC[] = "/Users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/feature_matrices/userFeatures_SVD_40f_K=0.02_min150e.txt";
 const char outputMovieFeatureFileMAC[] = "/Users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/feature_matrices/movieFeatures_SVD_40f_K=0.02_min150e.txt";
 
 // constants
-const double GLOBAL_AVG_MOVIE_RATING = 3.60951619727;
+const float GLOBAL_AVG_MOVIE_RATING = 3.60951619727;
 const int NUM_USERS = 458293;
 const int NUM_MOVIES = 17770;
 
-const double K = 0.015;
-const int NUM_FEATURES = 50;
-const int NUM_EPOCHS = 30;
+float LEARNING_RATE_USER = 0.001;
+float LEARNING_RATE_MOVIE = 0.001;
+const float LEARNING_RATE_DECREASE_RATE = 1;
 
-double LEARNING_RATE_Y = 0.007;
-double  LEARNING_RATE_USER = 0.007;
-double LEARNING_RATE_MOVIE = 0.007;
-double LRATE_ub = 0.007;
-double LRATE_mb = 0.007;
-double LAMBDA_ub = 0.005;
-double LAMBDA_mb = 0.005;
+const float EPSILON = 0.0001;
+const float VARIANCE_RATIO = 25;
 
-const double LEARNING_RATE_DECREASE_RATE = 1;
-const double EPSILON = 0.0001;
-const double VARIANCE_RATIO = 25;
+// to be adjusted (and set by command line args)
+int NUM_FEATURES;
+float K;
+int NUM_EPOCHS;
 
 // defines a single training data point
 class DataPoint {
 public:
     int user;
     int movie;
-    double rating;
+    float rating;
 
     DataPoint() {
         this->user = 0;
@@ -69,7 +65,7 @@ public:
         this->rating = 0;
     }
 
-    DataPoint(int user, int movie, double rating) {
+    DataPoint(unsigned int user, unsigned int movie, float rating) {
         this->user = user;
         this->movie = movie;
         this->rating = rating;
@@ -77,95 +73,59 @@ public:
 };
 
 // a vector of datapoints to hold data
-//vector<DataPoint*> *trainingData = new vector<DataPoint*>;
-vector<DataPoint*> **trainingData = new vector<DataPoint*>*[NUM_USERS]; // an array of vector pointers to DataPoint pointers
+vector<DataPoint*> *trainingData = new vector<DataPoint*>;
 
 // feature matrices (2D arrays); feature k for user u is userFeatures[u][k]
-double **userFeatures = new double*[NUM_USERS];
-double **movieFeatures = new double*[NUM_MOVIES];
+float **userFeatures = new float*[NUM_USERS];
+float **movieFeatures = new float*[NUM_MOVIES];
 
 // arrays to hold the average ratings for each movie and for each user
-double *avgUserRatings = new double[NUM_USERS];
-double *avgMovieRatings = new double[NUM_MOVIES];
+float *avgUserRatings = new float[NUM_USERS];
+float *avgMovieRatings = new float[NUM_MOVIES];
 
 // the average offset for a given user
-double *avgUserOffset = new double[NUM_USERS];
-double *avgMovieOffset = new double[NUM_MOVIES];
+float *avgUserOffset = new float[NUM_USERS];
+float *avgMovieOffset = new float[NUM_MOVIES];
 
-// b_u and b_i
-double *userBias = new double[NUM_USERS];
-double *movieBias = new double[NUM_MOVIES];
-
-// For each user, the number of movies they rated
-//int *movieRatingsByUser = new int[NUM_USERS];
-
-// the inverse square root of the number of movie ratings
-double *norm = new double[NUM_USERS];
-
-// stores the y-values of each y[movie][feature]
-double **y = new double*[NUM_MOVIES];
-
-// stores the sum of the y's: sumY[user][feature]
-double **sumY = new double*[NUM_USERS];
-
-// an array of vector pointers
-//vector<int> **moviesByUser = new vector<int>*[NUM_USERS];
-
-void computeNorms() {
-    for (int i = 0; i < NUM_USERS; i++) {
-        //int numMovies = movieRatingsByUser[i];
-        int numMovies = trainingData[i]->size();
-
-        if (numMovies > 0)
-            norm[i] = pow(numMovies, -0.5);
-    }
-}
+// cache some products to get a bit of a speed boost when computing dot products in predictRating()
+float *sumUpToFeatureK = new float[NUM_FEATURES];
 
 // returns a random value between -0.01 and 0.01
-double getRandom() {
-	//return 10.0 / 10.0 * ((double) rand() / ((double) RAND_MAX)) - 0.0;
+float getRandom() {
 	int num = ((int) rand()) % 100;
 	return 2.0 * num / 10000.0 - 0.01;
 }
 
 // initialize each element of the feature matrices
-void initialize() {
+void initialize(int numFeatures) {
+    cout << "In initialize()" << endl;
+
     // initialize the user feature matrix
     for (int i = 0; i < NUM_USERS; i++)
-        userFeatures[i] = new double[NUM_FEATURES];
+        userFeatures[i] = new float[numFeatures];
+
+    cout << "done1" << endl;
+
     for (int i = 0; i < NUM_USERS; i++) {
-        for (int j = 0; j < NUM_FEATURES; j++) {
-            //double rand = sqrt(GLOBAL_AVG_MOVIE_RATING / (double) NUM_FEATURES[0]) + getRandom();
-            userFeatures[i][j] = getRandom();
+        for (int j = 0; j < numFeatures; j++) {
+            //userFeatures[i][j] = 0.1;
+            userFeatures[i][j] = sqrt(GLOBAL_AVG_MOVIE_RATING / (float) NUM_FEATURES) + getRandom();
         }
     }
+
+    cout << "Done with user features..." << endl;
         
     // initialize the movie feature matrix
     for (int i = 0; i < NUM_MOVIES; i++)
-        movieFeatures[i] = new double[NUM_FEATURES];
+        movieFeatures[i] = new float[numFeatures];
     for (int i = 0; i < NUM_MOVIES; i++) {
-        for (int j = 0; j < NUM_FEATURES; j++) {
-            //double rand = sqrt(GLOBAL_AVG_MOVIE_RATING / (double) NUM_FEATURES[0]) + getRandom();
-            movieFeatures[i][j] = getRandom();
+        for (int j = 0; j < numFeatures; j++) {
+            //movieFeatures[i][j] = 0.1;
+            movieFeatures[i][j] = sqrt(GLOBAL_AVG_MOVIE_RATING / (float) NUM_FEATURES) + getRandom();
         }
     }
 
-    // initialize y
-    for (int i = 0; i < NUM_MOVIES; i++)
-        y[i] = new double[NUM_FEATURES];
-    for (int i = 0; i < NUM_MOVIES; i++) {
-        for (int j = 0; j < NUM_FEATURES; j++)
-            y[i][j] = getRandom();
-    }
-        
-    for (int i = 0; i < NUM_USERS; i++)
-        sumY[i] = new double[NUM_FEATURES];
-        
-    for (int i = 0; i < NUM_USERS; i++) {
-        trainingData[i] = new vector<DataPoint*>;
-    }
-
-    computeNorms();
+    cout << "Done with movie features..." << endl;
 }
 
 // helper function that splits a string
@@ -183,88 +143,97 @@ vector<string> split(const string &s, char delim) {
     return split(s, delim, elems);
 }
 
-double predictRating(int movie, int user) {
-	double result = GLOBAL_AVG_MOVIE_RATING + userBias[user] + movieBias[movie];
+float predictRating_training(int user, int movie, float *movieFeatureVec, float *userFeatureVec, int numFeatures, int currFeature) {
+    // at this point the features up to currFeature - 1 are trained and 
+    // will not change for the current run of trainSVD()
+
+    //float result = GLOBAL_AVG_MOVIE_RATING;
+    float result = 0;
+
+    if (currFeature >= 1) {
+        sumUpToFeatureK[currFeature - 1] = userFeatureVec[currFeature - 1] * movieFeatureVec[currFeature - 1];
+
+        if (currFeature > 1)
+            sumUpToFeatureK[currFeature - 1] += sumUpToFeatureK[currFeature - 2];
+
+        result += sumUpToFeatureK[currFeature - 1];
+    }
+
+    // calculate the dot product for the features that havent been trained yet in this round
+    for (int f = currFeature; f < numFeatures; f++) {
+        result += (userFeatureVec[f] * movieFeatureVec[f]);
+    }
+
+    return result;
+}
+
+float predictRating(int movie, int user, int numFeatures) {
+	//float result = GLOBAL_AVG_MOVIE_RATING;
+	//float result = userOffset + movieRating;
+	float result = 0;
 
     // find the dot product
-    for (int f = 0; f < NUM_FEATURES; f++)
-        result += movieFeatures[movie][f] * (userFeatures[user][f] + norm[user] * sumY[user][f]);
+    for (int f = 0; f < numFeatures; f++) {
+        result += (userFeatures[user][f] * movieFeatures[movie][f]);
+    }
 
     return result;
 }
 
 // trains our algorithm given an input data point
-void trainSVD(int user, int movie, double rating) {
-    double *userFeature = userFeatures[user - 1];
-    double *movieFeature = movieFeatures[movie - 1];
-
-    double error = rating - predictRating(movie - 1, user - 1);
-
-    userBias[user - 1] += (LRATE_ub * (error - LAMBDA_ub * userBias[user - 1]));
-    movieBias[movie - 1] += (LRATE_mb * (error - LAMBDA_mb * movieBias[movie - 1]));
+void trainSVD(int user, int movie, float rating, int Kindex, float numFeatures) {
+    float *userFeature = userFeatures[user - 1];
+    float *movieFeature = movieFeatures[movie - 1];
 
     // iterate over features 0 through N - 1
-    for (int k = 0; k < NUM_FEATURES; k++) {
-        double oldUserFeature = userFeature[k];
-        double oldMovieFeature = movieFeature[k];
+    for (int k = 0; k < numFeatures; k++) {
+        float error = rating - predictRating_training(user - 1, movie - 1, movieFeature, userFeature, numFeatures, k);
+        //float error = rating - predictRating(movie - 1, user - 1, numFeatures);
+
+        //float oldUserFeature = userFeature[k];
+        //float oldMovieFeature = movieFeature[k];
+
+        float oldUserFeature = userFeatures[user - 1][k];
+        float oldMovieFeature = movieFeatures[movie - 1][k];
 
         // update user feature vector
-        //userFeatures[user - 1][k] += (LEARNING_RATE_USER * (error * oldMovieFeature - K * oldUserFeature));
-        userFeature[k] += (LEARNING_RATE_USER * (error * oldMovieFeature - K * oldUserFeature));
+        userFeatures[user - 1][k] += (LEARNING_RATE_USER * (error * oldMovieFeature - K * oldUserFeature));
+        //userFeature[k] += (LEARNING_RATE_USER * (error * oldMovieFeature - K * oldUserFeature));
 
         // update movie feature vector
-        //movieFeatures[movie - 1][k] += (LEARNING_RATE_MOVIE * (error * oldUserFeature - K * oldMovieFeature));
+        movieFeatures[movie - 1][k] += (LEARNING_RATE_MOVIE * (error * oldUserFeature - K * oldMovieFeature));
         //movieFeature[k] += (LEARNING_RATE_MOVIE * (error * oldUserFeature - K * oldMovieFeature));
-        movieFeature[k] += LEARNING_RATE_MOVIE * (error * (oldUserFeature + norm[user - 1] * sumY[user - 1][k]) - K * oldMovieFeature);
-        
-        // for each movie that this user has rated
-        for (int m = 0; m < trainingData[user - 1]->size(); m++) {
-            double update = LEARNING_RATE_Y * (error * norm[user - 1] * oldMovieFeature - K * y[trainingData[user - 1]->at(m)->movie - 1][k]);
-            
-            y[trainingData[user - 1]->at(m)->movie - 1][k] += update;
-            sumY[user - 1][k] += update;
-        }
 
     } // end for loop over features
 }
 
 // compute the in-sample error
-double computeInSample(int numFeatures) {
-    double error = 0;
-    int size = 0;
+float computeInSample(int numFeatures) {
+    float error = 0;
 
     // go through each training point and calculate the error for it
-    for (int i = 0; i < NUM_USERS; i++) {
-        if (trainingData[i] != NULL) {
-            for (int j = 0; j < trainingData[i]->size(); j++) {
-                DataPoint *currData = trainingData[i]->at(j);
-                size++;
-                
-                if (currData != NULL) {
-                    int currUser = currData->user;
-                    int currMovie = currData->movie;
-                    double actualRating = currData->rating;
+    for (int i = 0; i < trainingData->size(); i++) {
+        int currUser = trainingData->at(i)->user;
+        int currMovie = trainingData->at(i)->movie;
+        float actualRating = trainingData->at(i)->rating;
+        
+        float predicted = predictRating(currMovie - 1, currUser - 1, numFeatures);
 
-                    double predicted = predictRating(currMovie - 1, currUser - 1);
+		// make sure the rating is between 1 and 5
+        if (predicted > 5)
+            predicted = 5;
+        else if (predicted < 1)
+            predicted = 1;
 
-		            // make sure the rating is between 1 and 5
-                    if (predicted > 5)
-                        predicted = 5;
-                    else if (predicted < 1)
-                        predicted = 1;
-
-                    error += (predicted - actualRating) * (predicted - actualRating);
-                }
-            }
-        }
+        error += (predicted - actualRating) * (predicted - actualRating);
     }
 
-    return sqrt(error / size);
+    return sqrt(error / trainingData->size());
 }
 
 // compute the out of sample error
-double computeOutOfSample(int numFeatures) {
-    double error = 0;
+float computeOutOfSample(int numFeatures) {
+    float error = 0;
     int numPoints = 0;
 
     string line;
@@ -282,7 +251,7 @@ double computeOutOfSample(int numFeatures) {
 
         int user = -1;
         int movie = -1;
-        double actualRating = -1;
+        float actualRating = -1;
 
         istringstream lineIn(line);
         while (lineIn) {
@@ -298,7 +267,7 @@ double computeOutOfSample(int numFeatures) {
             }
         }
 
-        double predictedRating = predictRating(movie - 1, user - 1);
+        float predictedRating = predictRating(movie - 1, user - 1, numFeatures);
 
         // make sure the rating is between 1 and 5
         if (predictedRating > 5)
@@ -312,8 +281,7 @@ double computeOutOfSample(int numFeatures) {
         error += (predictedRating - actualRating) * (predictedRating - actualRating);
 
         numPoints++;
-    }
-
+    }    
     outOfSample.close();
 
     return sqrt(error / numPoints);
@@ -321,59 +289,47 @@ double computeOutOfSample(int numFeatures) {
 
 // iterate through the epochs and all the data points for each epoch
 void learn() {
-    double Eout = 10000;
-    double prevEout = 1000000;
+    float Eout = 10000;
+    float prevEout = 1000000;
+
+    initialize(NUM_FEATURES);
 
     int i = 0;
-    
-    int num = 0;
 
     // go N times through the data
     //for (int i = 0; i < NUM_EPOCHS; i++) {
-    while (i < NUM_EPOCHS || (prevEout - Eout) > EPSILON) {
+    while (i < NUM_EPOCHS) { //|| (prevEout - Eout) > EPSILON) {
+        //cout << "Current epoch" << "(feature " << f + 1 << ", K-value " << h + 1 << ") : " << i + 1 << " out of " << NUM_EPOCHS << endl;
+
         const clock_t begin_time = clock();
 
         // go through each point in the data set
-        for (int p = 0; p < NUM_USERS; p++) {
-        
-            if (trainingData[p] != NULL) {
-            
-                for (int j = 0; j < trainingData[p]->size(); j++) {
-                
-                    DataPoint *currData = trainingData[p]->at(j);
-                
-                    if (currData != NULL) {
-                    
-                        if (num % 1000000 == 0)
-                            cout << "Data point: " << num / 1000000 << " million" << endl;
-                        num++;
+        for (int p = 0; p < trainingData->size(); p++) {
+            if (p % 30000000 == 0)
+                cout << "Data point: " << p / 1000000 << " million" << endl;
 
-                        // train the SVD on each point (will go through all features)
-                        trainSVD(currData->user, currData->movie, currData->rating);
-                    }
-                    
-                } // end movie loop
-                
-            }
-            
-        } // end user loop
+            // train the SVD on each point (will go through all features)
+            trainSVD(trainingData->at(p)->user, trainingData->at(p)->movie, 
+                trainingData->at(p)->rating, K, NUM_FEATURES);
+
+        } // end training data loop
 
         // randomize the training data
-        //next_permutation(trainingData->begin(), trainingData->end());
+        next_permutation(trainingData->begin(), trainingData->end());
 
         // decrease the learning rates
         LEARNING_RATE_USER *= LEARNING_RATE_DECREASE_RATE;
         LEARNING_RATE_MOVIE *= LEARNING_RATE_DECREASE_RATE;
 
         // only check Eout every 5 iterations
-        if (i % 3 == 0) {
+        /*if (i % 3 == 0) {
             prevEout = Eout;
             Eout = computeOutOfSample(NUM_FEATURES);
             cout << "    Eout = " << Eout << endl;
-        }
+        }*/
 
         cout << "Finished epoch: " << i + 1 << " out of " << NUM_EPOCHS << endl;
-        cout << " --> " << double(clock() - begin_time) / CLOCKS_PER_SEC << " seconds" << endl;
+        cout << " --> " << float(clock() - begin_time) / CLOCKS_PER_SEC << " seconds" << endl;
 
         i++;
 
@@ -381,7 +337,7 @@ void learn() {
 
     // print out the results
     cout << endl << "RESULTS: (K, # of features, Ein, Eout)" << endl;
-    cout << K << ", " << NUM_FEATURES << ", " << computeInSample(NUM_FEATURES) << ", " << computeOutOfSample(NUM_FEATURES) << endl;
+    cout << K << ", " << NUM_FEATURES << ", " << computeInSample(NUM_FEATURES) << ", " /*<< computeOutOfSample(NUM_FEATURES)*/ << endl;
 }
 
 // computes the average ratings for each user (uses UM data set)
@@ -399,10 +355,10 @@ void getAvgUserRatings() {
     int numLinesSoFar = 0;
 
     int prevUser = 1;
-    double totalRating = 0;
+    float totalRating = 0;
     int index = 0; // counts the # of movies each user rated
 
-    double currTotalUserOffset = 0;
+    float currTotalUserOffset = 0;
 
     // go through the input data line by line
     while (getline(dataFile, line)) {
@@ -411,7 +367,7 @@ void getAvgUserRatings() {
 
         int currUser = -1;
         int currMovie = -1;
-        double currRating = -1;
+        float currRating = -1;
 
         istringstream lineIn(line);
         while (lineIn) {
@@ -426,8 +382,6 @@ void getAvgUserRatings() {
                 count++;
             }
         }
-        
-        DataPoint *currPoint = new DataPoint(currUser, currMovie, currRating);
 
         // to calculate the average ratings for the movies
 
@@ -440,11 +394,6 @@ void getAvgUserRatings() {
             avgUserOffset[prevUser - 1] = currTotalUserOffset / index;
             currTotalUserOffset = currRating - avgMovieRatings[currMovie - 1];
             //currTotalUserOffset = currRating - GLOBAL_AVG_MOVIE_RATING;
-            //movieRatingsByUser[prevUser - 1] = index;
-            
-            // we see a new user, so he starts off with the only rating we have seen for him
-            //moviesByUser[currUser - 1]->push_back(currMovie);
-            trainingData[currUser - 1]->push_back(currPoint);
 
             index = 1;
         } else { // if we keep seeing data for the same user
@@ -453,23 +402,19 @@ void getAvgUserRatings() {
                 totalRating += currRating;
                 currTotalUserOffset += (currRating - avgMovieRatings[currMovie - 1]);
                 //currTotalUserOffset += (currRating - GLOBAL_AVG_MOVIE_RATING);
-                
-                //moviesByUser[currUser - 1]->push_back(currMovie);
-                trainingData[currUser - 1]->push_back(currPoint);
             }
         }
 
         prevUser = currUser;
             
         numLinesSoFar++;
-        if (numLinesSoFar % 1000000 == 0)
+        if (numLinesSoFar % 10000000 == 0)
             cout << "Computing avg user ratings: " << numLinesSoFar / 1000000 << " million" << endl;
     }    
 
     // deals with end of file
     avgUserRatings[prevUser - 1] = totalRating / index;
     avgUserOffset[prevUser - 1] = currTotalUserOffset / index;
-    //movieRatingsByUser[prevUser - 1] = index;
 
     dataFile.close();
 }
@@ -488,62 +433,59 @@ void getData() {
     int numLinesSoFar = 0;
 
     int prevMovie = 1;
-    double totalRating = 0;
+    float totalRating = 0;
     int index = 0; // counts the # of users that watched each movie
 
-    double currTotalMovieOffset = 0;
+    float currTotalMovieOffset = 0;
 
     // go through the input data line by line
     while (getline(dataFile, line)) {
         // where are we in the current line?
         int count = 0;
-        
-        int currUser = -1;
-        int currMovie = -1;
-        double currRating = -1;
+        DataPoint *currPoint = new DataPoint();
 
         istringstream lineIn(line);
         while (lineIn) {
             int val = 0;
             if (lineIn >> val) {
                 if (count == 0)
-                    currUser = val;
+                    currPoint->user = val;
                 else if (count == 1)
-                    currMovie = val;
+                    currPoint->movie = val;
                 else if (count == 3)
-                    currRating = val;
+                    currPoint->rating = val;
                 count++;
             }
         }
         // add the point to our data vector
-        //trainingData->push_back(currPoint);
+        trainingData->push_back(currPoint);
 
         // to calculate the average ratings for the movies
-        if (prevMovie != currMovie) {
+        if (prevMovie != currPoint->movie) {
             //avgMovieRatings[prevMovie - 1] = totalRating / index;
             avgMovieRatings[prevMovie - 1] = (VARIANCE_RATIO * GLOBAL_AVG_MOVIE_RATING + totalRating) / (VARIANCE_RATIO + index);
             
-            totalRating = currRating;
+            totalRating = currPoint->rating;
 
             avgMovieOffset[prevMovie - 1] = currTotalMovieOffset / index;
 
             //currTotalMovieOffset = currPoint->rating - avgUserRatings[currPoint->user - 1];
-            currTotalMovieOffset = currRating - GLOBAL_AVG_MOVIE_RATING;
+            currTotalMovieOffset = currPoint->rating - GLOBAL_AVG_MOVIE_RATING;
 
             index = 1;
         } else {
-            if (currRating != 0) {
+            if (currPoint->rating != 0) {
                 index++;
-                totalRating += currRating;
+                totalRating += currPoint->rating;
                 //currTotalMovieOffset += (currPoint->rating - avgUserRatings[currPoint->user - 1]);
-                currTotalMovieOffset += (currRating - GLOBAL_AVG_MOVIE_RATING);
+                currTotalMovieOffset += (currPoint->rating - GLOBAL_AVG_MOVIE_RATING);
             }
         }
 
-        prevMovie = currMovie;
+        prevMovie = currPoint->movie;
             
         numLinesSoFar++;
-        if (numLinesSoFar % 1000000 == 0)
+        if (numLinesSoFar % 10000000 == 0)
             cout << numLinesSoFar / 1000000 << " million" << endl;
     }    
 
@@ -638,7 +580,7 @@ void outputResults() {
         }
 
         // calculate the rating for user, movie
-        double predictedScore = predictRating(movie - 1, user - 1);
+        float predictedScore = predictRating(movie - 1, user - 1, NUM_FEATURES);
 
         // make sure the rating is between 1 and 5
         if (predictedScore > 5)
@@ -653,7 +595,7 @@ void outputResults() {
     qualFile.close();
     outputFile.close();
 
-    //outputVectors();
+    outputVectors();
 }
 
 void cleanup() {
@@ -666,29 +608,37 @@ void cleanup() {
     delete[] userFeatures;
     delete[] movieFeatures;
 
-    
+    cout << "Deleted user and movie features" << endl;
 
-    /*delete[] avgMovieRatings;
+    for (int i = 0; i < trainingData->size(); i++)
+        delete trainingData->at(i);
+    delete trainingData;
+
+    cout << "Deleted training data" << endl;
+
+    delete[] avgMovieRatings;
     delete[] avgUserRatings;
 
     delete[] avgUserOffset;
-    delete[] avgMovieOffset;*/
+    delete[] avgMovieOffset;
 
-    //delete[] userBias;
-    //delete[] movieBias;
-
-    //delete[] movieRatingsByUser;
-
-    //delete[] norm;
-
-    
+    delete[] sumUpToFeatureK;
 }
 
 // K-value, # features, # epochs
 int main(int argc, char *argv[]) {
 	srand((unsigned) time(0));
 
-    initialize();
+    // process the command line args
+    if (argc != 4) {
+        cout << "Usage: ./SVDadv [K-value] [# features] [# epochs]" << endl;
+        return 1;
+    }
+
+    // process the command-line args
+    K = atof(argv[1]);
+    NUM_FEATURES = atoi(argv[2]);
+    NUM_EPOCHS = atoi(argv[3]);
 
     getData();
     cout << "Done with getData()" << endl;
@@ -697,7 +647,7 @@ int main(int argc, char *argv[]) {
     learn();
     cout << "Done learning" << endl;
 
-    //outputResults();
+    outputResults();
     cout << "Done with outputResults()" << endl;
 
     //cleanup();

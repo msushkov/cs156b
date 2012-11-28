@@ -23,14 +23,19 @@ brogrammers
 11/15/12: 60 features, 120 epochs, K = 0.015, Lrate = 0.001: RMSEprobe = 0.930082, RMSEquiz = 0.93129.
 11/15/12: Fixed a bug in caching of dot products. Ran the algorithm with 40 features, K = 0.02, Lrate = 0.001 for 150 epochs. Eout(probe) = 0.928722, Ein = 0.80932, RMSE(quiz) = 0.92985. Got to 2.26% above water.
 11/19/12: Trying to implement a faster version of SVD in which the error only gets calculated once for every 10 features. Each epoch takes about 35 seconds, which is much faster than before.
-11/23/12: Trying regular batch SVD with predicted rating as just the dot product; no offset or baseline. Feature vectors are initialized to sqrt(3.6... / # feat) + small random value between -0.01 and 0.01.
-	Running with 40 features, K = 0.02, Lrate = 0.001, and 150 epochs. From iteration 135 to 138 Eout (measured on data4) went from 0.907295 to 0.907092. Training on data123.
-	Final (after 150 iterations) Eout = 0.906555 (measured on data4), Ein = 0.748658, Quiz RMSE = 0.90818 (4.54% above water). (no training data randomization)
+11/23/12: Trying regular batch SVD with predicted rating as just the dot product; no offset or baseline. Feature vectors are initialized to sqrt(3.6... / # feat) + small random value between -0.01 and 0.01. Running with 40 features, K = 0.02, Lrate = 0.001, and 150 epochs. From iteration 135 to 138 Eout (measured on data4) went from 0.907295 to 0.907092. Training on data123. Final (after 150 iterations) Eout = 0.906555 (measured on data4), Ein = 0.748658, Quiz RMSE = 0.90818 (4.54% above water). (no training data randomization)
 11/24/12: Ran SVD with 50 features, 157 iterations, K = 0.02, Lrate = 0.001. Ein (123) = 0.738339, Eout (4) = 0.905375, Quiz RMSE = 0.90706, 4.6605% above water (with data randomization).
+11/26/12: Ran SVD with 100 features, 160 iterations, K = 0.02, Lrate = 0.001. Ein (123) = 0.615475, Eout (4) = 0.902798, Quiz RMSE = 0.90495, 4.8823% above water (with randomization). About 550 seconds per epoch.
+11/27/12: Ran the 11/24 SVD with data1234 (threw probe into training). 50 features, 157 epochs, K = 0.02, Lrate = 0.001. Ein (1234) = 0.630875, Quiz RMSE = 0.899, 5.51% above water. About 270 seconds per epoch.
+11/27/12: Also submitted a dumb solution where rating = avgMovieRatings[movie] + avgUserOffset[user] where the movie ratings are regularized. No learning, just some averages. Will try to aggregate this. Quiz RMSE = 0.98089, -3.1% above water.
 
 Done so far:
 - Got the basic version of batch SVD to 4.66% above water
 - Implemented k-Means
+
+Notes:
+- RMSE (all 1's) = 2.90237
+- RMSE (all 0's) = 3.84358
 
 TODO:
 - run SVD with 200 features
