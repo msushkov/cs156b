@@ -53,7 +53,7 @@
           movie_weight[movieId][f] += (LRATE_mw * (tmp_sum[f] - LAMDA_mw * tmp_mw)); 
 
           // *** Update Sum of the weights for this user (trick for speed)
-          sum_mw[custId][f] += (movie_weight[movieId][f] - tmp_mw);
+          sum_mw[custId][f] = sum_mw[custId][f] + movie_weight[movieId][f] - tmp_mw;
 
         }
         

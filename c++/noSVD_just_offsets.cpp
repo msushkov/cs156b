@@ -17,25 +17,17 @@ using namespace std;
 const int MAC = 0;
 
 // Filenames
-const char dataFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data123_86%of4.txt";
-const char dataFilePathUM[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/um/data123_86%of4.txt";
-const char outOfSampleFile[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data_7%of4(valid).txt";
+const char dataFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data1234.txt";
+const char dataFilePathUM[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/um/data1234.txt";
+const char outOfSampleFile[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data4.txt";
 const char qualFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/qual.dta";
-const char aggrFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data_7%of4(aggr).txt";
-const char aggrOutFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/aggregation/svd/SVD_30f_onAggrSet.txt";
-const char outputFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/SVD/svd/new/SVD_30f_qual.txt";
-
-const char outputUserFeatureFile[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/feature_matrices/userFeatures_SVD_data123_86%of4_50f_K=0.02_min156e.txt";
-const char outputMovieFeatureFile[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/feature_matrices/movieFeatures_SVD_data123_86%of4_50f_K=0.02_min156e.txt";
+const char outputFilePath[] = "/home/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/aggregation/allOnes.txt";
 
 const char dataFilePathMAC[] = "/Users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data123.txt";
 const char dataFilePathUMMAC[] = "/Users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/um/data123.txt";
 const char outOfSampleFileMAC[] = "/Users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/data4.txt";
 const char qualFilePathMAC[] = "/Users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/mu/qual.dta";
 const char outputFilePathMAC[] = "/Users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/submissions/SVD/SVD_40f_min150e_K=0.02.txt";
-
-const char outputUserFeatureFileMAC[] = "/Users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/feature_matrices/userFeatures_SVD_40f_K=0.02_min150e.txt";
-const char outputMovieFeatureFileMAC[] = "/Users/msushkov/Dropbox/Caltech/Caltech Classes/CS/CS 156b/data/feature_matrices/movieFeatures_SVD_40f_K=0.02_min150e.txt";
 
 // constants
 const float GLOBAL_AVG_MOVIE_RATING = 3.60951619727;
@@ -291,8 +283,6 @@ float computeOutOfSample(int numFeatures) {
 
 // iterate through the epochs and all the data points for each epoch
 void learn() {
-    cout << trainingData->size() << endl;
-
     float Eout = 10000;
     float prevEout = 1000000;
 
@@ -302,7 +292,7 @@ void learn() {
 
     // go N times through the data
     //for (int i = 0; i < NUM_EPOCHS; i++) {
-    while (i < NUM_EPOCHS || (prevEout - Eout) > EPSILON) {
+    while (i < NUM_EPOCHS) { //|| (prevEout - Eout) > EPSILON) {
         //cout << "Current epoch" << "(feature " << f + 1 << ", K-value " << h + 1 << ") : " << i + 1 << " out of " << NUM_EPOCHS << endl;
 
         const clock_t begin_time = clock();
@@ -326,11 +316,11 @@ void learn() {
         LEARNING_RATE_MOVIE *= LEARNING_RATE_DECREASE_RATE;
 
         // only check Eout every 5 iterations
-        if (i % 3 == 0) {
+        /*if (i % 3 == 0) {
             prevEout = Eout;
             Eout = computeOutOfSample(NUM_FEATURES);
             cout << "    Eout = " << Eout << endl;
-        }
+        }*/
 
         cout << "Finished epoch: " << i + 1 << " out of " << NUM_EPOCHS << endl;
         cout << " --> " << float(clock() - begin_time) / CLOCKS_PER_SEC << " seconds" << endl;
@@ -506,109 +496,22 @@ void getData() {
     getAvgUserRatings();
 }
 
-void outputVectors() {
-    cout << "Output vectors" << endl;
-
-    // output files
-    ofstream outputFileUser;
-    
-    if (MAC == 0)
-	    outputFileUser.open(outputUserFeatureFile, ios::out);
-	else
-		outputFileUser.open(outputUserFeatureFileMAC, ios::out);
-	
-    ofstream outputFileMovie;
-    if (MAC == 0)
-	    outputFileMovie.open(outputMovieFeatureFile, ios::out);
-    else
-    	outputFileMovie.open(outputMovieFeatureFileMAC, ios::out);
-    
-    // output the user features
-    for (int i = 0; i < NUM_USERS; i++) {
-        for (int k = 0; k < NUM_FEATURES; k++) {
-            outputFileUser << userFeatures[i][k] << " ";
-        }
-
-        outputFileUser << endl;
-    }
-
-    // output the movie features
-    for (int i = 0; i < NUM_MOVIES; i++) {
-        for (int k = 0; k < NUM_FEATURES; k++) {
-            outputFileMovie << movieFeatures[i][k] << " ";
-        }
-
-        outputFileMovie << endl;
-    }
-
-    outputFileMovie.close();
-    outputFileUser.close();
-}
-
-void outputAggr() {
-    // output file
-    ofstream outputFile;
-    outputFile.open(aggrOutFilePath, ios::out);
-    
-    // aggregation file
-    string line;
-    ifstream aggrFile;
-    aggrFile.open(aggrFilePath, ios::in);
-
-    // go through each line of the qual file
-    while (getline(aggrFile, line)) {
-        // where are we in the current line?
-        int count = 0;
-
-        int user = -1;
-        int movie = -1;
-
-        // read the values on the current line one by one
-        istringstream lineIn(line);
-        while (lineIn) {
-            int val = 0;
-            if (lineIn >> val) {
-                if (count == 0)
-                    user = val;
-                else if (count == 1)
-                    movie = val;
-                count++;
-            }
-        }
-
-        // calculate the rating for user, movie
-        double predictedScore = predictRating(movie - 1, user - 1, NUM_FEATURES);
-
-        // make sure the rating is between 1 and 5
-        if (predictedScore > 5)
-            predictedScore = 5;
-        else if (predictedScore < 1)
-            predictedScore = 1;
-
-        // write to file
-        outputFile << predictedScore << endl;
-    }
-
-    aggrFile.close();
-    outputFile.close();
-}
-
 // writes data out
 void outputResults() {
     // output file
     ofstream outputFile;
     if (MAC)
-        outputFile.open(outputFilePathMAC, ios::out);
+    	outputFile.open(outputFilePathMAC, ios::out);
     else
-        outputFile.open(outputFilePath, ios::out);
+    	outputFile.open(outputFilePath, ios::out);
     
     // qual file
     string line;
     ifstream qualFile;
     if (MAC)
-        qualFile.open(qualFilePathMAC, ios::in);
+    	qualFile.open(qualFilePathMAC, ios::in);
     else
-        qualFile.open(qualFilePath, ios::in);
+    	qualFile.open(qualFilePath, ios::in);
     
     // go through each line of the qual file
     while (getline(qualFile, line)) {
@@ -632,13 +535,14 @@ void outputResults() {
         }
 
         // calculate the rating for user, movie
-        double predictedScore = predictRating(movie - 1, user - 1, NUM_FEATURES);
+        //float predictedScore = predictRating(movie - 1, user - 1, NUM_FEATURES);
+        float predictedScore = 1;//avgMovieRatings[movie - 1] + avgUserOffset[user - 1];
 
         // make sure the rating is between 1 and 5
-        if (predictedScore > 5)
+        /*if (predictedScore > 5)
             predictedScore = 5;
         else if (predictedScore < 1)
-            predictedScore = 1;
+            predictedScore = 1;*/
 
         // write to file
         outputFile << predictedScore << endl;
@@ -646,9 +550,6 @@ void outputResults() {
 
     qualFile.close();
     outputFile.close();
-
-    outputAggr();
-    //outputVectors();
 }
 
 void cleanup() {
@@ -693,12 +594,12 @@ int main(int argc, char *argv[]) {
     NUM_FEATURES = atoi(argv[2]);
     NUM_EPOCHS = atoi(argv[3]);
 
-    getData();
+    //getData();
     cout << "Done with getData()" << endl;
     
     // run the SVD algorithm
-    learn();
-    cout << "Done learning" << endl;
+    //learn();
+    //cout << "Done learning" << endl;
 
     outputResults();
     cout << "Done with outputResults()" << endl;
